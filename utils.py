@@ -1,6 +1,63 @@
 import torch
 import numpy as np
 
+def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_criterion, disc_optimizer):
+    model.train()
+    disc.train()
+    lastest_checkpoint_time = time.time()
+    print("Start training")
+    for epoch in range(epochs):
+        elapsed_time = time.time() - START_TIME
+        if elapsed_time > DURATION:
+            return  # Stop training
+
+        for batch_idx, (inputs, targets) in enumerate(train_loader):
+            imgs, masks = inputs[0].to(device), inputs[1].to(device)
+            targets = targets.to(device)
+            outputs = model(imgs, masks)
+
+            # Train Discriminator
+            disc_optimizer.zero_grad()
+            disc_fake_pred = disc(outputs.to(device))
+            disc_real_pred = disc(targets.to(device))
+            
+            disc_fake_loss = disc_criterion(disc_fake_pred, torch.zeros_like(disc_fake_pred).to(device))
+            disc_real_loss = disc_criterion(disc_real_pred, torch.ones_like(disc_real_pred).to(device))
+            disc_loss = (disc_fake_loss + disc_real_loss) / 2
+            disc_loss.backward()
+            disc_optimizer.step()
+
+            # Train Model
+            optimizer.zero_grad()
+            outputs = model(imgs, masks)
+            disc_fake_pred = disc(outputs.to(device))
+            disc_loss = disc_criterion(disc_fake_pred, torch.ones_like(disc_fake_pred).to(device))
+
+            loss = criterion(masks.to(device), outputs.to(device), targets.to(device), disc_loss)
+            loss.backward()
+            optimizer.step()
+
+            # Save checkpoint
+            if time.time() - lastest_checkpoint_time > SAVE_INTERVAL:
+                lastest_checkpoint_time = time.time()
+                model_checkpoint_dest = os.path.join(CHECKPOINTS_DIR, f'model_{epoch}.pth')
+                disc_checkpoint_dest = os.path.join(CHECKPOINTS_DIR, f'disc_{epoch}.pth')
+
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'loss': loss
+                }, model_checkpoint_dest)
+
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': disc.state_dict(),
+                    'optimizer_state_dict': disc_optimizer.state_dict(),
+                    'loss': disc_loss
+                }, disc_checkpoint_dest)
+
+# ======================== Authors code starts here ========================
 def _load(checkpoint_path):
     checkpoint = torch.load(checkpoint_path, map_location= torch.device('cpu'))
     return checkpoint

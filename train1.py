@@ -4,6 +4,7 @@ import os
 import cv2
 from torch.utils.data import Dataset, DataLoader
 import time
+from utils import *
 
 from network.network_pro import Inpaint
 from losses.combined import CombinedLoss
@@ -53,62 +54,6 @@ class InpaintingDataset(Dataset):
 train_dataset = InpaintingDataset(img_dir=IMG_DIR, mask_dir=MASK_DIR)
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE)
 
-def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_criterion, disc_optimizer):
-    model.train()
-    disc.train()
-    lastest_checkpoint_time = time.time()
-    print("Start training")
-    for epoch in range(epochs):
-        elapsed_time = time.time() - START_TIME
-        if elapsed_time > DURATION:
-            return  # Stop training
-
-        for batch_idx, (inputs, targets) in enumerate(train_loader):
-            imgs, masks = inputs[0].to(device), inputs[1].to(device)
-            targets = targets.to(device)
-            outputs = model(imgs, masks)
-
-            # Train Discriminator
-            disc_optimizer.zero_grad()
-            disc_fake_pred = disc(outputs.to(device))
-            disc_real_pred = disc(targets.to(device))
-            
-            disc_fake_loss = disc_criterion(disc_fake_pred, torch.zeros_like(disc_fake_pred).to(device))
-            disc_real_loss = disc_criterion(disc_real_pred, torch.ones_like(disc_real_pred).to(device))
-            disc_loss = (disc_fake_loss + disc_real_loss) / 2
-            disc_loss.backward()
-            disc_optimizer.step()
-
-            # Train Model
-            optimizer.zero_grad()
-            outputs = model(imgs, masks)
-            disc_fake_pred = disc(outputs.to(device))
-            disc_loss = disc_criterion(disc_fake_pred, torch.ones_like(disc_fake_pred).to(device))
-
-            loss = criterion(masks.to(device), outputs.to(device), targets.to(device), disc_loss)
-            loss.backward()
-            optimizer.step()
-
-            # Save checkpoint
-            if time.time() - lastest_checkpoint_time > SAVE_INTERVAL:
-                lastest_checkpoint_time = time.time()
-                model_checkpoint_dest = os.path.join(CHECKPOINTS_DIR, f'model_{epoch}.pth')
-                disc_checkpoint_dest = os.path.join(CHECKPOINTS_DIR, f'disc_{epoch}.pth')
-
-                torch.save({
-                    'epoch': epoch,
-                    'model_state_dict': model.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'loss': loss
-                }, model_checkpoint_dest)
-
-                torch.save({
-                    'epoch': epoch,
-                    'model_state_dict': disc.state_dict(),
-                    'optimizer_state_dict': disc_optimizer.state_dict(),
-                    'loss': disc_loss
-                }, disc_checkpoint_dest)
-
 # Model and loss function
 model = Inpaint().to(device)
 criterion = CombinedLoss().to(device)
@@ -132,7 +77,6 @@ if MODEL_CHECKPOINT != None and DISC_CHECKPOINT != None:
 
 # Training
 train(EPOCHS, model, train_loader, criterion, optimizer, device, disc, disc_criterion, disc_optimizer)
-
 # Evaluation
 model.eval()
 test_image = cv2.imread('./samples/test_img_face/1.png') / 255.0
