@@ -356,7 +356,7 @@ class MyVisionMamba(nn.Module):
 
         # Mamba impl
         residual = None
-        hiden_states = x
+        hidden_states = x
 
         if not self.use_bidirectional:
           for layer in self.layers:
