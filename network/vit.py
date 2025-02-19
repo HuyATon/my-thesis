@@ -6,6 +6,10 @@ import torch.nn.functional as F
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
+# Mamba related:
+from network.vim import create_block
+from timm.models.layers import DropPath
+
 
 # helpers
 def pair(t):
@@ -205,7 +209,7 @@ class Transformer(nn.Module):
         return x, stack
 
 class ViT(nn.Module):
-    def __init__(self, image_size, patch_size, dim, depth, heads, mlp_dim, channels = 3, dim_head = 64, dropout = 0.):
+    def __init__(self, image_size, patch_size, dim, depth, heads, mlp_dim, channels = 3, dim_head = 64, dropout = 0., mamba_depth=16, **kwargs):
         super().__init__()
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(patch_size)
@@ -216,6 +220,27 @@ class ViT(nn.Module):
         num_w_patches = image_width // patch_width
         patch_dim = (channels + 1) * patch_height * patch_width
         out_dim = channels * patch_height * patch_width
+        # Mamba:
+        norm_epsilon = 1e-6
+        rms_norm = True
+        residual_in_fp32 = True
+        fused_add_norm = True
+        if_bimamba = False
+        bimamba_type = "v2"
+        drop_rate = 0.0
+        drop_path_rate = 0.1
+        dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]  # stochastic depth decay rule
+        # import ipdb;ipdb.set_trace()
+        inter_dpr = [0.0] + dpr
+        self.drop_path = DropPath(drop_path_rate) if drop_path_rate > 0. else nn.Identity()
+        if_divide_out = False
+        init_layer_scale = None
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        dtype = torch.float32
+        factory_kwargs = {"device": device, "dtype": dtype}
+        kwargs.update(factory_kwargs)
+        self.hidden_dim = dim
+        # end Mamba
 
         self.to_patch = nn.Sequential(
             Window_partition(patch_size),
@@ -226,7 +251,25 @@ class ViT(nn.Module):
         self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout, patch_size, image_size)
-
+        self.mamba_encoders = nn.ModuleList([
+            create_block(
+                  embed_dim = self.hidden_dim,
+                  d_state=16, 
+                  ssm_cfg = None,
+                  norm_epsilon = norm_epsilon,
+                  rms_norm = rms_norm,
+                  residual_in_fp32=residual_in_fp32,
+                  fused_add_norm=fused_add_norm,
+                  layer_idx=i,
+                  if_bimamba=if_bimamba,
+                  bimamba_type=bimamba_type,
+                  drop_path=inter_dpr[i],
+                  if_divide_out=if_divide_out,
+                  init_layer_scale=init_layer_scale,
+                  **factory_kwargs,
+              )
+            for i in range(mamba_depth)
+        ])
         self.mlp_head = nn.Sequential(
             nn.LayerNorm(dim),
             nn.Linear(dim, out_dim),
@@ -258,7 +301,16 @@ class ViT(nn.Module):
         #inter = F.interpolate(torch.mean(inter_m[:, 1:], dim=-1, keepdim=True)[:, :16*16].reshape(-1, 1, 16, 16), (256, 256))
         #inter_shift = F.interpolate(torch.mean(inter_m[:, 1:], dim=-1, keepdim=True)[:, -15*15:].reshape(-1, 1, 15, 15), (15*16, 15*16))
         #inter[..., 8:-8, 8:-8] = (inter[..., 8:-8, 8:-8] + inter_shift) / 2
+        print(self.hidden_dim)
+        print(x.shape)
 
+        # for mamba:
+        hidden_states = x
+        residual = None
+        for layer in self.mamba_encoders:
+            hidden_states, residual = layer(hidden_states, residual, inference_params= None)
+        print("hidden_states: ", hidden_states.shape)
+        print("x: ", x.shape)
 
         x, stack = self.transformer(x, m)
         x = x[:, 1:]
