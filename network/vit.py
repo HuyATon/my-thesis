@@ -5,10 +5,7 @@ import torch.nn.functional as F
 
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
-
-# Mamba related:
-from network.vim import create_block
-from timm.models.layers import DropPath
+from mamba_vision_mixer import MambaVisionMixer
 
 
 # helpers
@@ -209,7 +206,7 @@ class Transformer(nn.Module):
         return x, stack
 
 class ViT(nn.Module):
-    def __init__(self, image_size, patch_size, dim, depth, heads, mlp_dim, channels = 3, dim_head = 64, dropout = 0., mamba_depth=16, **kwargs):
+    def __init__(self, image_size, patch_size, dim, depth, heads, mlp_dim, n_mixer_blocks = 16,channels = 3, dim_head = 64, dropout = 0.):
         super().__init__()
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(patch_size)
@@ -251,25 +248,14 @@ class ViT(nn.Module):
         self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout, patch_size, image_size)
-        self.mamba_encoders = nn.ModuleList([
-            create_block(
-                  embed_dim = self.hidden_dim,
-                  d_state=16, 
-                  ssm_cfg = None,
-                  norm_epsilon = norm_epsilon,
-                  rms_norm = rms_norm,
-                  residual_in_fp32=residual_in_fp32,
-                  fused_add_norm=fused_add_norm,
-                  layer_idx=i,
-                  if_bimamba=if_bimamba,
-                  bimamba_type=bimamba_type,
-                  drop_path=inter_dpr[i],
-                  if_divide_out=if_divide_out,
-                  init_layer_scale=init_layer_scale,
-                  **factory_kwargs,
-              )
-            for i in range(mamba_depth)
+        # Mamba Vision Mixers (2)
+        self.pre_mixers_layers = nn.ModuleList([
+            MambaVisionMixer(d_model = dim) for _ in range(n_mixer_blocks)
         ])
+        self.post_mixers_layers = nn.ModuleList([
+            MambaVisionMixer(d_model = dim) for _ in range(n_mixer_blocks)
+        ])
+
         self.mlp_head = nn.Sequential(
             nn.LayerNorm(dim),
             nn.Linear(dim, out_dim),
@@ -304,18 +290,18 @@ class ViT(nn.Module):
         print(self.hidden_dim)
         print(x.shape)
 
-        # for mamba:
-        hidden_states = x
-        residual = None
-        for layer in self.mamba_encoders:
-            hidden_states, residual = layer(hidden_states, residual, inference_params= None)
-        print("hidden_states: ", hidden_states.shape)
-        print("x: ", x.shape)
+        # Pre mamba mixers
+        for layer in self.pre_mixers_layers:
+            x = layer(x)
 
         x, stack = self.transformer(x, m)
+
+        # Post mamba mixers
+        for layer in self.post_mixers_layers:
+            x = layer(x)
+
         x = x[:, 1:]
         x = self.mlp_head(x) # B, S, 3
-
         out = window_reverse(x, self.window, self.resolution)
 
         return out, stack
