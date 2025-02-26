@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
-from mamba_vision_mixer import MambaVisionMixer
+from network.mamba_vision_mixer import MambaVisionMixer
 
 # helpers
 def pair(t):
