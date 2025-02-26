@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
-
+from mamba_vision_mixer import MambaVisionMixer
 
 # helpers
 def pair(t):
@@ -205,7 +205,7 @@ class Transformer(nn.Module):
         return x, stack
 
 class ViT(nn.Module):
-    def __init__(self, image_size, patch_size, dim, depth, heads, mlp_dim, channels = 3, dim_head = 64, dropout = 0.):
+    def __init__(self, image_size, patch_size, dim, depth, heads, mlp_dim, n_mixer_blocks = 16,channels = 3, dim_head = 64, dropout = 0.):
         super().__init__()
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(patch_size)
@@ -226,6 +226,13 @@ class ViT(nn.Module):
         self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout, patch_size, image_size)
+        # Mamba Vision Mixers (2)
+        self.pre_mixers_layers = nn.ModuleList([
+            MambaVisionMixer(d_model = dim) for _ in range(n_mixer_blocks)
+        ])
+        self.post_mixers_layers = nn.ModuleList([
+            MambaVisionMixer(d_model = dim) for _ in range(n_mixer_blocks)
+        ])
 
         self.mlp_head = nn.Sequential(
             nn.LayerNorm(dim),
@@ -259,11 +266,18 @@ class ViT(nn.Module):
         #inter_shift = F.interpolate(torch.mean(inter_m[:, 1:], dim=-1, keepdim=True)[:, -15*15:].reshape(-1, 1, 15, 15), (15*16, 15*16))
         #inter[..., 8:-8, 8:-8] = (inter[..., 8:-8, 8:-8] + inter_shift) / 2
 
+        # Pre mamba mixers
+        for layer in self.pre_mixers_layers:
+            x = layer(x)
 
         x, stack = self.transformer(x, m)
+
+        # Post mamba mixers
+        for layer in self.post_mixers_layers:
+            x = layer(x)
+
         x = x[:, 1:]
         x = self.mlp_head(x) # B, S, 3
-
         out = window_reverse(x, self.window, self.resolution)
 
         return out, stack
