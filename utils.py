@@ -54,7 +54,9 @@ def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_
             outputs = model(imgs, masks)
             disc_fake_pred = disc(outputs.to(device))
             disc_loss = disc_criterion(disc_fake_pred, torch.ones_like(disc_fake_pred).to(device))
-            loss = criterion(masks.to(device), outputs.to(device), targets.to(device), disc_loss)
+            #loss = criterion(masks.to(device), outputs.to(device), targets.to(device), disc_loss)
+            loss = criterion(masks.to(device), outputs.to(device), targets.to(device), disc_fake_pred, disc_loss)
+
             model_total_loss += loss.item()
             loss.backward()
             optimizer.step()
