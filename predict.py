@@ -39,7 +39,7 @@ model.load_state_dict(model_checkpoint["model_state_dict"])
 
 model.eval()
 for mask_folder in mask_folders:
-    index = 0
+    indicator = 1
     test_dataset = InpaintingDataset(img_dir=img_path, mask_dir=mask_folder)
     test_loader = DataLoader(test_dataset, batch_size=batch_size)
     for inputs, targets in test_loader:
@@ -50,7 +50,7 @@ for mask_folder in mask_folders:
         for i in range(outputs.shape[0]):
             inpainted_img = outputs[i].permute(1, 2, 0).cpu().detach().numpy() * 255.
             inpainted_img = inpainted_img.astype('uint8')
-            file_name = str(index).zfill(5) + ".png"
+            file_name = str(indicator).zfill(5) + ".png"
             save_path = os.path.join(out_dir[mask_folder], file_name)
             cv2.imwrite(save_path, inpainted_img)
-            index += 1
+            indicator += 1

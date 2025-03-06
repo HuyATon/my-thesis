@@ -7,8 +7,8 @@ class InpaintingDataset(Dataset):
     def __init__(self, img_dir, mask_dir):
         self.img_dir = img_dir
         self.mask_dir = mask_dir
-        self.imgs = os.listdir(img_dir)
-        self.masks = os.listdir(mask_dir)
+        self.imgs = sorted(os.listdir(img_dir))
+        self.masks = sorted(os.listdir(mask_dir))
     
     def __len__(self):
         return len(self.imgs)
