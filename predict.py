@@ -48,6 +48,7 @@ for mask_folder in mask_folders:
         outputs = model(imgs, masks)
         
         for i in range(outputs.shape[0]):
+            out = torch.clip(outputs[i], -1., 1) * 0.5 + 0.5
             inpainted_img = outputs[i].permute(1, 2, 0).cpu().detach().numpy() * 255.
             inpainted_img = inpainted_img.astype('uint8')
             file_name = str(indicator).zfill(5) + ".png"

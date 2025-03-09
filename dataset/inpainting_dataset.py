@@ -17,7 +17,7 @@ class InpaintingDataset(Dataset):
         img_path = os.path.join(self.img_dir, self.imgs[idx])
         mask_path = os.path.join(self.mask_dir, self.masks[idx])
 
-        img = cv2.imread(img_path) / 255.0  # Normalize
+        img = (cv2.imread(img_path) / 255.0) * 2 - 1.  # Normalize to [-1, 1]
         mask = cv2.imread(mask_path)[..., 0] / 255.0  
 
         img = torch.Tensor(img).permute(2, 0, 1).float()
