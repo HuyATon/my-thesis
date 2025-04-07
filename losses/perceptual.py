@@ -1,22 +1,44 @@
 import torch.nn as nn
+import torch
 import torchvision.models as models
 
 class PerceptualLoss(nn.Module):
     def __init__(self):
         super(PerceptualLoss, self).__init__()
-        # Load the VGG16 model pre-trained on ImageNet
-        self.weights = models.VGG16_Weights.IMAGENET1K_FEATURES
-        self.vgg = models.vgg16(weights=self.weights).features.eval()
+        self.means = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1)
+        self.stds = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)
+        features = models.vgg16(pretrained=True).features
+        self.to_relu_1_2 = nn.Sequential()
+        self.to_relu_2_2 = nn.Sequential()
+        self.to_relu_3_3 = nn.Sequential()
+        self.to_relu_4_3 = nn.Sequential()
         
-        # Default layers: Relu_1_2, Relu_2_2, Relu_3_3, Relu_4_3
-        self.layers = [3, 8, 15, 22]
-        
-        # Freeze parameters of VGG16
+        for x in range(4):
+            self.to_relu_1_2.add_module(str(x), features[x])
+        for x in range(4, 9):
+            self.to_relu_2_2.add_module(str(x), features[x])
+        for x in range(9, 16):
+            self.to_relu_3_3.add_module(str(x), features[x])
+        for x in range(16, 23):
+            self.to_relu_4_3.add_module(str(x), features[x])
+
         for param in self.vgg.parameters():
             param.requires_grad = False
 
-        # Get the transformation pipeline from the weights
-        # self.transforms = models.VGG16_Weights.IMAGENET1K_FEATURES.transforms()
+    def calculate_features(self, x):
+        out = []
+        h = self.to_relu_1_2(x)
+        out.append(h)
+        h = self.to_relu_2_2(h)
+        out.append(h)
+        h = self.to_relu_3_3(h)
+        out.append(h)
+        h = self.to_relu_4_3(h)
+        out.append(h)
+        return out
+
+    def normalize(self, x):
+        return (torch.clamp(x, 0 , 1) - self.means) /  self.stds
 
     def forward(self, input, target):
         """
@@ -27,19 +49,11 @@ class PerceptualLoss(nn.Module):
         Returns:
         - loss (torch.Tensor): Perceptual loss value.
         """
-        # Preprocess images using the predefined transforms
-        # input = self.transforms(input)
-        # target = self.transforms(target)
-        
-        input_features = input
-        target_features = target
+        normalized_input = self.normalize(input)
+        normalized_target = self.normalize(target)
         loss = 0.0
-        
-        # Extract and compare features
-        for i, layer in enumerate(self.vgg):
-            input_features = layer(input_features)
-            target_features = layer(target_features)
-            if i in self.layers:
-                loss += nn.functional.mse_loss(input_features, target_features)
-        
+        input_out = self.calculate_features(normalized_input)
+        target_out = self.calculate_features(normalized_target)
+        for i in range(len(input_out)):
+            loss += nn.functional.mse_loss(input_out[i], target_out[i])
         return loss
