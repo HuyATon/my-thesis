@@ -57,6 +57,4 @@ class PerceptualLoss(nn.Module):
         target_out = self.calculate_features(normalized_target)
         for i in range(len(input_out)):
             loss += nn.functional.mse_loss(input_out[i], target_out[i])
-
-        print("loss: ", loss.item())
         return loss
