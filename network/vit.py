@@ -227,7 +227,7 @@ class ViT(nn.Module):
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout, patch_size, image_size)
         # Mamba Vision Mixers (2)
-        self.pre_mixers_layers = nn.ModuleList([
+        self.post_mixers_layers = nn.ModuleList([
             MambaVisionMixer(d_model = dim) for _ in range(n_mixer_blocks)
         ])
 
