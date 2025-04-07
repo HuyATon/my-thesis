@@ -230,9 +230,6 @@ class ViT(nn.Module):
         self.pre_mixers_layers = nn.ModuleList([
             MambaVisionMixer(d_model = dim) for _ in range(n_mixer_blocks)
         ])
-        self.post_mixers_layers = nn.ModuleList([
-            MambaVisionMixer(d_model = dim) for _ in range(n_mixer_blocks)
-        ])
 
         self.mlp_head = nn.Sequential(
             nn.LayerNorm(dim),
@@ -260,15 +257,6 @@ class ViT(nn.Module):
         cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b = b)
         x = torch.cat((cls_tokens, x), dim=1)
         x += self.pos_embedding
-
-        #inter_m = m / (1e-6 + torch.max(m, dim=2, keepdim=True)[0])
-        #inter = F.interpolate(torch.mean(inter_m[:, 1:], dim=-1, keepdim=True)[:, :16*16].reshape(-1, 1, 16, 16), (256, 256))
-        #inter_shift = F.interpolate(torch.mean(inter_m[:, 1:], dim=-1, keepdim=True)[:, -15*15:].reshape(-1, 1, 15, 15), (15*16, 15*16))
-        #inter[..., 8:-8, 8:-8] = (inter[..., 8:-8, 8:-8] + inter_shift) / 2
-
-        # Pre mamba mixers
-        for layer in self.pre_mixers_layers:
-            x = layer(x)
 
         x, stack = self.transformer(x, m)
 
