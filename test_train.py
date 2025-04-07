@@ -32,9 +32,9 @@ disc.train()
 for epoch in range(10):
         model_total_loss = 0
         disc_total_loss = 0
-        inputs = (torch.randn(BATCH_SIZE, 3, 256, 256).to(device), torch.randn(BATCH_SIZE, 1, 256, 256).to(device))
+        inputs = (torch.randn(1, 3, 256, 256).to(device), torch.randn(1, 1, 256, 256).to(device))
         imgs, masks = inputs[0].to(device), inputs[1].to(device)
-        targets = torch.randn(BATCH_SIZE, 3, 256, 256).to(device)
+        targets = torch.randn(1, 3, 256, 256).to(device)
         targets = targets.to(device)
         outputs = model(imgs, masks)
 
