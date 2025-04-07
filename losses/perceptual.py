@@ -22,7 +22,7 @@ class PerceptualLoss(nn.Module):
         for x in range(16, 23):
             self.to_relu_4_3.add_module(str(x), features[x])
 
-        for param in self.vgg.parameters():
+        for param in self.parameters():
             param.requires_grad = False
 
     def calculate_features(self, x):
