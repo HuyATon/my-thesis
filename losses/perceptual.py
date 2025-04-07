@@ -5,8 +5,9 @@ import torchvision.models as models
 class PerceptualLoss(nn.Module):
     def __init__(self):
         super(PerceptualLoss, self).__init__()
-        self.means = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1)
-        self.stds = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.means = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1).to(self.device)
+        self.stds = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1).to(self.device)
         features = models.vgg16(pretrained=True).features
         self.to_relu_1_2 = nn.Sequential()
         self.to_relu_2_2 = nn.Sequential()
