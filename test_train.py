@@ -26,6 +26,7 @@ disc = Discriminator().to(device)
 disc_criterion = nn.BCEWithLogitsLoss().to(device)
 disc_optimizer = torch.optim.Adam(disc.parameters(), lr=LR)
 
+print("#model_params:", count_parameters(model))
 # Training
 model.train()
 disc.train()

@@ -75,6 +75,8 @@ def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_
                   model_loss= model_total_loss / len(train_loader),
                   disc_loss= disc_total_loss / len(train_loader))
 
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 # ======================== Authors code starts here ========================
 def _load(checkpoint_path):
