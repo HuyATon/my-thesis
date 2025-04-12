@@ -192,20 +192,17 @@ class Transformer(nn.Module):
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
                 PreNorm(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout, window=window, resolution=resolution, is_overlap=is_overlap)),
-                PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout)),
                 PreNorm(dim, MambaVisionMixer(dim)),
                 PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout))
             ]))
 
     def forward(self, x, m):
         stack = []
-        for i, (attn, ff_1, mamv, ff_2) in enumerate(self.layers):
+        for i, (attn, mamv, ff) in enumerate(self.layers):
             y, m, inter = attn(x, m)
             x = y + x
-            x = ff_1(x) + x
-            z = mamv(x)
-            z = ff_2(z) + z
-            x = x + z
+            x = mamv(x) + x
+            x = ff(x) + x
             stack.append(inter)
         return x, stack
 
