@@ -60,3 +60,5 @@ for epoch in range(10):
         model_total_loss += loss.item()
         loss.backward()
         optimizer.step()
+
+        print("Success train epoch:", epoch)
