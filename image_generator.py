@@ -3,6 +3,7 @@ from network.network_pro import Inpaint
 from dataset.inpainting_dataset import InpaintingDataset
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
+import numpy as np
 import os
 
 class ImageGen:
@@ -42,7 +43,7 @@ class ImageGen:
         assert processed_img.min() >= -1 and processed_img.max() <= 1, "Not in range [-1, 1]"
         processed_img = torch.clamp(processed_img, -1, 1) # Make sure after tanh act
         processed_img = (processed_img + 1) /  2 # => [0, 1]
-        processed_img = processed_img.permute(1, 2, 0).cpu()
+        processed_img = processed_img.permute(1, 2, 0).cpu().numpy()
         assert processed_img.min() >= 0 and processed_img.max() <= 1, "Not in range [0, 1]"
         print(processed_img.shape)
         final_img = self.to_img(processed_img)
