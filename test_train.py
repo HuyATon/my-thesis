@@ -62,4 +62,4 @@ for (inputs, targets) in train_loader:
         loss.backward()
         optimizer.step()
 
-        print("Success train epoch:", epoch)
+        print("Success train")
