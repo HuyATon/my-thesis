@@ -38,8 +38,10 @@ class PerceptualLoss(nn.Module):
         out.append(h)
         return out
 
-    def normalize(self, x):
-        return (torch.clamp(x, 0 , 1) - self.means) /  self.stds
+    def normalize(self, x, from_tanh=True):
+        if from_tanh:
+            x = (x + 1) / 2
+        return (x - self.means) / self.stds
 
     def forward(self, input, target):
         """
