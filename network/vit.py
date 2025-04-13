@@ -208,7 +208,6 @@ class Transformer(nn.Module):
         stack = []
         for i, msau_block in enumerate(self.layers):
             if len(msau_block) == 4:
-                print(i)
                 attn, ff_1, mamv, ff_2 = msau_block
                 y, m, inter = attn(x, m)
                 x = y + x
@@ -217,7 +216,6 @@ class Transformer(nn.Module):
                 x = ff_2(x) + x
                 stack.append(inter)
             else:
-                print(i)
                 attn, ff = msau_block
                 y, m, inter = attn(x, m)
                 x = y + x
