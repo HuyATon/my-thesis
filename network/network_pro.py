@@ -17,5 +17,6 @@ class Inpaint(nn.Module):
             c_gen_.append((c_g * mask) + img * (1 - mask))
         gen = self.refine(torch.cat(c_gen_+[mask], 1))
         print("target image range", img.max(), img.min())
+        print("inf gen range", gen.max(), gen.min())
         gen = (gen * mask) + img * (1 - mask)
         return gen
