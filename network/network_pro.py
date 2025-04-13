@@ -19,4 +19,5 @@ class Inpaint(nn.Module):
         print("target image range", img.max(), img.min())
         print("inf gen range", gen.max(), gen.min())
         gen = (gen * mask) + img * (1 - mask)
+        print("final range", gen.max(), gen.min())
         return gen
