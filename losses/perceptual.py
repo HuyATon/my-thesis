@@ -50,8 +50,6 @@ class PerceptualLoss(nn.Module):
         Returns:
         - loss (torch.Tensor): Perceptual loss value.
         """
-        print("input range:", input.max(), input.min())
-        print("input min:", target.max(), target.min())
         normalized_input = self.normalize(input)
         normalized_target = self.normalize(target)
         loss = 0.0
