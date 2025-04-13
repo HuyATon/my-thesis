@@ -45,7 +45,6 @@ class ImageGen:
         processed_img = (processed_img + 1) /  2 # => [0, 1]
         processed_img = processed_img.permute(1, 2, 0).cpu().numpy()
         assert processed_img.min() >= 0 and processed_img.max() <= 1, "Not in range [0, 1]"
-        print(processed_img.shape)
         final_img = self.to_img(processed_img)
         final_img.save(save_path)
         print("Proccessed image saved at:", save_path)
