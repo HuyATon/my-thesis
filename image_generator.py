@@ -25,7 +25,7 @@ class ImageGen:
         self.to_img = transforms.ToPILImage()
 
     def load_model(self):
-        if checkpoint != None:
+        if self.model_checkpoint_path != None:
             checkpoint = torch.load(self.model_checkpoint_path, map_location=self.device)
             if "model_state_dict" not in checkpoint:
                 raise KeyError("Invalid checkpoint: Missing 'model_state_dict'")
