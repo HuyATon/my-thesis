@@ -15,6 +15,8 @@ from dataset.inpainting_dataset import InpaintingDataset
 # Training configs
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print('Using device:', device)
+dateset = InpaintingDataset(img_dir='samples/test_img', mask_dir='samples/test_mask')
+train_loader = DataLoader(dateset, batch_size=1, shuffle=True, num_workers=0)
 
 # Model and loss function
 model = Inpaint().to(device)
@@ -30,12 +32,11 @@ print("#model_params:", count_parameters(model))
 # Training
 model.train()
 disc.train()
-for epoch in range(10):
+for (inputs, targets) in train_loader:
         model_total_loss = 0
         disc_total_loss = 0
-        inputs = (torch.randn(1, 3, 256, 256).to(device), torch.randn(1, 1, 256, 256).to(device))
+        
         imgs, masks = inputs[0].to(device), inputs[1].to(device)
-        targets = torch.randn(1, 3, 256, 256).to(device)
         targets = targets.to(device)
         outputs = model(imgs, masks)
 
