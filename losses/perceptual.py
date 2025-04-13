@@ -40,7 +40,7 @@ class PerceptualLoss(nn.Module):
 
     def normalize(self, x, from_tanh=True):
         if from_tanh:
-            x = (x + 1) / 2
+            x = (x + 1) / 2 # [-1, 1] => [0, 1]
         return (x - self.means) / self.stds
 
     def forward(self, input, target):
