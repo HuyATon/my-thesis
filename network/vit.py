@@ -189,21 +189,35 @@ class Transformer(nn.Module):
         H, W = pair(resolution)
         self.num = (H//kH)*(W//kW)
 
-        for _ in range(depth):
+        for _ in range(depth - 1):
             self.layers.append(nn.ModuleList([
                 PreNorm(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout, window=window, resolution=resolution, is_overlap=is_overlap)),
+                PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout)),
                 PreNorm(dim, MambaVisionMixer(dim)),
                 PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout))
             ]))
+        
+        self.final_transformer = nn.ModuleList([
+            PreNorm(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout, window=window, resolution=resolution, is_overlap=is_overlap)),
+            PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout))
+        ])
 
     def forward(self, x, m):
         stack = []
-        for i, (attn, mamv, ff) in enumerate(self.layers):
+        for i, (attn, ff_1, mamv, ff_2) in enumerate(self.layers):
             y, m, inter = attn(x, m)
             x = y + x
+            x = ff_1(x) + x
             x = mamv(x) + x
+            x = ff_2(x) + x
+            stack.append(inter)
+
+        for attn, ff in self.final_transformer:
+            y, m, inter = attn(x, m)
+            x = y + x
             x = ff(x) + x
             stack.append(inter)
+
         return x, stack
 
 class ViT(nn.Module):
