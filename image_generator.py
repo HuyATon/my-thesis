@@ -6,7 +6,7 @@ from torchvision.transforms import transforms
 import numpy as np
 import os
 
-class ImageGen:
+class ImageGenerator:
     def __init__(self, img_dir, mask_dir, output_dir, batch_size=8, model_checkpoint_path = None):
         self.model_checkpoint_path = model_checkpoint_path
         self.img_dir = img_dir

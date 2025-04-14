@@ -1,4 +1,4 @@
-from image_generator import ImageGen
+from image_generator import ImageGenerator
 import argparse
 import torch
 
@@ -15,7 +15,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size")
     args = parser.parse_args()
 
-    img_gen = ImageGen(
+    img_gen = ImageGenerator(
         model_checkpoint_path=args.ckpt,
         img_dir=args.img,
         mask_dir=args.mask,
