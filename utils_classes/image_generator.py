@@ -1,6 +1,6 @@
 import torch
-from network.network_pro import Inpaint
-from dataset.inpainting_dataset import InpaintingDataset
+from ..network.network_pro import Inpaint
+from ..dataset.inpainting_dataset import InpaintingDataset
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 import numpy as np
