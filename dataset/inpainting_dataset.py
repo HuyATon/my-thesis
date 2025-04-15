@@ -23,4 +23,6 @@ class InpaintingDataset(Dataset):
         img = torch.Tensor(img).permute(2, 0, 1).float()
         mask = torch.Tensor(mask).unsqueeze(0).float()
 
+        print(mask.shape)
+
         return (img, mask), img
