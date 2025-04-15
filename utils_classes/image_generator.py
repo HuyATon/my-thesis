@@ -40,6 +40,7 @@ class ImageGenerator:
     def to_image_save_format(self, processed_img):
         assert processed_img.min() >= -1 and processed_img.max() <= 1, "Not in range [-1, 1]"
         processed_img = (processed_img + 1) /  2 # => CHW: [0, 1]
+        assert processed_img.min() >= 0 and processed_img.max() <= 1, "Not in range [0, 1]"
         processed_img = processed_img.cpu() 
         out_img = self.to_img(processed_img) # PIL Image: HWC [0, 255]
         return out_img
