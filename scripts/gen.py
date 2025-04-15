@@ -1,4 +1,4 @@
-from utils_classes.image_generator import ImageGenerator
+from ..utils_classes.image_generator import ImageGenerator
 import argparse
 import torch
 
