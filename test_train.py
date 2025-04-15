@@ -62,4 +62,4 @@ for (inputs, targets) in train_loader:
         loss.backward()
         optimizer.step()
 
-        print("Success train")
+        print("Success train - model loss: {:.4f}, disc loss: {:.4f}".format(model_total_loss, disc_total_loss))
