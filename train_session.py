@@ -1,9 +1,9 @@
 import torch
 import os
 import time
-from ..network.network_pro import Inpaint
-from ..network.discriminator import Discriminator
-from ..utils import save_checkpoint, save_loss
+from network.network_pro import Inpaint
+from network.discriminator import Discriminator
+from utils import save_checkpoint, save_loss
 from torch.utils.data import DataLoader
 
 MODEL_LOSS_KEY = "model_loss"
