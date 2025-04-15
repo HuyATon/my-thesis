@@ -50,14 +50,18 @@ class TrainSession:
             self.disc.load_state_dict(saved_checkpoint[WEIGHT_KEY])
             self.disc_optimizer.load_state_dict(saved_checkpoint[OPT_KEY])
             self.current_epoch = saved_checkpoint[EPOCH_KEY]  +  1
+            saved_checkpoint = None # free memory
 
     def save_checkpoint(self, epoch, model_loss, disc_loss):
         model_checkpoint_dest = os.path.join(self.checkpoint_repo, f'model_{epoch}.pth')
         disc_checkpoint_dest = os.path.join(self.checkpoint_repo, f'disc_{epoch}.pth')
-        loss_checkpoint_dest = os.path.join(self.checkpoint_repo, f'loss_{epoch}.pth')
         save_checkpoint(model_checkpoint_dest, epoch, self.model, self.optimizer)
         save_checkpoint(disc_checkpoint_dest, epoch, self.disc, self.disc_optimizer)
+    
+    def save_loss(self, epoch, model_loss, disc_loss):
+        loss_checkpoint_dest = os.path.join(self.checkpoint_repo, f'loss_{epoch}.pth')
         save_loss(loss_checkpoint_dest, epoch, model_loss, disc_loss)
+
 
     def start_training(self):
         start_time = time.time()
@@ -98,6 +102,9 @@ class TrainSession:
                 loss.backward()
                 self.optimizer.step()
 
+        self.save_loss(epoch = epoch, 
+                       model_loss = model_total_loss / len(self.train_loader),
+                       disc_loss = disc_total_loss / len(self.train_loader))
         if time.time() - lastest_checkpoint_time > self.save_window:
             self.save_checkpoint(epoch=epoch)
             lastest_checkpoint_time = time.time()

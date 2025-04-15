@@ -1,11 +1,10 @@
-from image_generator import ImageGenerator
+from utils_classes.image_generator import ImageGenerator
 import argparse
 import torch
 
 
 # Example:
-# (evaluation) python image_generator.py --ckpt <path_to_checkpoint> --img <path_to_image_folder> --mask <path_to_mask_folder> --output <path_to_output_folder> --batch_size 1   
-# (test: not provide ckpt) python image_generator.py --img <path_to_image_folder> --mask <path_to_mask_folder> --output <path_to_output_folder> --batch_size 1
+# python gen.py --ckpt <path> --img <path> --mask <path> --output <path> --batch_size 1   
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Inpaint inference")
     parser.add_argument("--ckpt", type=str, required=False, help="Path to model checkpoint")
