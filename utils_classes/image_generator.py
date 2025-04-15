@@ -5,7 +5,6 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 import numpy as np
 import os
-import cv2
 
 class ImageGenerator:
     def __init__(self, img_dir, mask_dir, output_dir, batch_size=8, model_checkpoint_path = None):
@@ -22,6 +21,7 @@ class ImageGenerator:
         self.mask_sub_folder_paths = [
             os.path.join(mask_dir, mask_type) for mask_type in self.assess_ranges
         ]
+        self.to_img = transforms.ToPILImage()
 
     def load_model(self):
         if self.model_checkpoint_path != None:
@@ -37,18 +37,17 @@ class ImageGenerator:
             os.makedirs(outsub_folder_path, exist_ok = True)
             self.out_dirs.append(outsub_folder_path)
 
-    def to_save_format(self, processed_img):
+    def to_image_save_format(self, processed_img):
         assert processed_img.min() >= -1 and processed_img.max() <= 1, "Not in range [-1, 1]"
-        processed_img = torch.clamp(processed_img, -1, 1) # Make sure after tanh act
-        processed_img = (processed_img + 1) /  2 # => [0, 1]
-        processed_img = processed_img.permute(1, 2, 0).cpu().numpy()
+        processed_img = (processed_img + 1) /  2 # => CHW: [0, 1]
+        processed_img = processed_img.cpu() 
         assert processed_img.min() >= 0 and processed_img.max() <= 1, "Not in range [0, 1]"
-        out_img = (processed_img * 255).astype(np.uint8) # [0, 255]
+        out_img = self.to_img(processed_img) # PIL image
         return out_img
 
     def save_image(self, processed_img, save_path):
-        formatted_img = self.to_save_format(processed_img)
-        cv2.imwrite(save_path, formatted_img)
+        formatted_img = self.to_image_save_format(processed_img)
+        formatted_img.save(save_path)
         print("Proccessed image saved at:", save_path)
 
     def gen(self):
