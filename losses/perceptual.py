@@ -26,6 +26,8 @@ class PerceptualLoss(nn.Module):
         for param in self.parameters():
             param.requires_grad = False
 
+        self.standard_transform = models.VGG16_Weights.DEFAULT.transforms()
+
     def calculate_features(self, x):
         out = []
         h = self.to_relu_1_2(x)
@@ -41,7 +43,7 @@ class PerceptualLoss(nn.Module):
     def normalize(self, x, from_tanh=True):
         if from_tanh:
             x = (x + 1) / 2 # [-1, 1] => [0, 1]
-        return (x - self.means) / self.stds
+        return self.standard_transform(x)
 
     def forward(self, input, target):
         """
