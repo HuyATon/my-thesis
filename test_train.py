@@ -32,33 +32,5 @@ print("#model_params:", model.count_parameters())
 # Training
 model.train()
 disc.train()
-for (inputs, targets) in train_loader:
-        model_total_loss = 0
-        disc_total_loss = 0
-        
-        imgs, masks = inputs[0].to(device), inputs[1].to(device)
-        targets = targets.to(device)
-        outputs = model(imgs, masks)
 
-        # Train Discriminator
-        disc_optimizer.zero_grad()
-        disc_fake_pred = disc(outputs.detach())
-        disc_real_pred = disc(targets)
-        
-        disc_fake_loss = disc_criterion(disc_fake_pred, torch.zeros_like(disc_fake_pred))
-        disc_real_loss = disc_criterion(disc_real_pred, torch.ones_like(disc_real_pred))
-        disc_loss = (disc_fake_loss + disc_real_loss) / 2
-        disc_total_loss += disc_loss.item()
-        disc_loss.backward()
-        disc_optimizer.step()
-
-        # Train Model
-        optimizer.zero_grad()
-        disc_fake_pred = disc(outputs)
-        disc_loss = disc_criterion(disc_fake_pred, torch.ones_like(disc_fake_pred))
-        loss = criterion(masks, outputs, targets, disc_loss)
-        model_total_loss += loss.item()
-        loss.backward()
-        optimizer.step()
-
-        print("Success train - model loss: {:.4f}, disc loss: {:.4f}".format(model_total_loss, disc_total_loss))
+train(epochs=5, model=model, train_loader=train_loader, criterion=criterion, optimizer=optimizer, device=device, disc=disc, disc_criterion=disc_criterion, disc_optimizer=disc_optimizer)
