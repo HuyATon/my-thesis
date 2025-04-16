@@ -71,7 +71,7 @@ class TrainSession:
                 return # stop training
             model_total_loss = 0
             disc_total_loss = 0
-            for (inputs, targets) in enumerate(self.train_loader):
+            for inputs, targets in self.train_loader:
                 imgs, masks = inputs[0].to(self.device), inputs[1].to(self.device)
                 targets = targets.to(self.device)
 
