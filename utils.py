@@ -39,11 +39,11 @@ def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_
 
             # Train Discriminator
             disc_optimizer.zero_grad()
-            disc_fake_pred = disc(outputs.to(device))
-            disc_real_pred = disc(targets.to(device))
+            disc_fake_pred = disc(outputs.detach()) # reuse output
+            disc_real_pred = disc(targets)
             
-            disc_fake_loss = disc_criterion(disc_fake_pred, torch.zeros_like(disc_fake_pred).to(device))
-            disc_real_loss = disc_criterion(disc_real_pred, torch.ones_like(disc_real_pred).to(device))
+            disc_fake_loss = disc_criterion(disc_fake_pred, torch.zeros_like(disc_fake_pred))
+            disc_real_loss = disc_criterion(disc_real_pred, torch.ones_like(disc_real_pred))
             disc_loss = (disc_fake_loss + disc_real_loss) / 2
             disc_total_loss += disc_loss.item()
             disc_loss.backward()
@@ -51,10 +51,9 @@ def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_
 
             # Train Model
             optimizer.zero_grad()
-            outputs = model(imgs, masks)
-            disc_fake_pred = disc(outputs.to(device))
-            disc_loss = disc_criterion(disc_fake_pred, torch.ones_like(disc_fake_pred).to(device))
-            loss = criterion(masks.to(device), outputs.to(device), targets.to(device), disc_loss)
+            disc_fake_pred = disc(outputs) # reuse output
+            disc_loss = disc_criterion(disc_fake_pred, torch.ones_like(disc_fake_pred))
+            loss = criterion(masks, outputs, targets, disc_loss)
             model_total_loss += loss.item()
             loss.backward()
             optimizer.step()
