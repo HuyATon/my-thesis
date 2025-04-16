@@ -52,7 +52,7 @@ class TrainSession:
             self.current_epoch = saved_checkpoint[EPOCH_KEY]  +  1
             saved_checkpoint = None # free memory
 
-    def save_checkpoint(self, epoch, model_loss, disc_loss):
+    def save_checkpoint(self, epoch):
         model_checkpoint_dest = os.path.join(self.checkpoint_repo, f'model_{epoch}.pth')
         disc_checkpoint_dest = os.path.join(self.checkpoint_repo, f'disc_{epoch}.pth')
         save_checkpoint(model_checkpoint_dest, epoch, self.model, self.optimizer)
@@ -72,10 +72,8 @@ class TrainSession:
             progress = time.time() - start_time
             if progress > self.duration:
                 return
-            
             model_total_loss = 0
             disc_total_loss = 0
-
             for batch_idx, (inputs, targets) in enumerate(self.train_loader):
                 imgs, masks = inputs[0].to(self.device), inputs[1].to(self.device)
                 targets = targets.to(self.device)
@@ -102,12 +100,12 @@ class TrainSession:
                 loss.backward()
                 self.optimizer.step()
 
-        self.save_loss(epoch = epoch, 
-                       model_loss = model_total_loss / len(self.train_loader),
-                       disc_loss = disc_total_loss / len(self.train_loader))
-        if time.time() - lastest_checkpoint_time > self.save_window:
-            self.save_checkpoint(epoch=epoch)
-            lastest_checkpoint_time = time.time()
-        self.current_epoch += 1
+            self.save_loss(epoch = epoch, 
+                        model_loss = model_total_loss / len(self.train_loader),
+                        disc_loss = disc_total_loss / len(self.train_loader))
+            if time.time() - lastest_checkpoint_time > self.save_window:
+                self.save_checkpoint(epoch=epoch)
+                lastest_checkpoint_time = time.time()
+            self.current_epoch += 1
 
   
