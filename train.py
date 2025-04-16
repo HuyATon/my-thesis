@@ -12,6 +12,8 @@ from torch.utils.data import DataLoader
 # --model_checkpoint
 # --disc_checkpoint
 # --repo_path
+
+# MANUAL: python --img_dir <path> --mask_dir <path> --batch_size <int> --model_checkpoint <path> --disc_checkpoint <path> --repo_path <path>
 parser = argparse.ArgumentParser(description="Training parameters")
 parser.add_argument("--img_dir", type=str, required=True, help="Path to the image directory")
 parser.add_argument("--mask_dir", type=str, required=True, help="Path to the mask directory")
@@ -28,8 +30,6 @@ batch_size = args.batch_size
 model_checkpoint = args.model_checkpoint
 disc_checkpoint = args.disc_checkpoint
 repo_path = args.repo_path
-
-
 
 assert torch.cuda.is_available(), "CUDA is not available."
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")   

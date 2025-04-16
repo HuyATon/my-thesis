@@ -59,7 +59,7 @@ class TrainSession:
         self.disc.load_state_dict(saved_checkpoint[WEIGHT_KEY])
         self.disc_optimizer.load_state_dict(saved_checkpoint[OPT_KEY])
 
-        self.current_epoch = saved_checkpoint[EPOCH_KEY] + 1
+        self.last_epoch = saved_checkpoint[EPOCH_KEY] + 1
 
     def start_training(self):
         self.prepare_repo()
@@ -114,6 +114,7 @@ class TrainSession:
         save_checkpoint(disc_checkpoint_dest, epoch, self.disc, self.disc_optimizer)
     
     def log_loss(self, epoch: int, model_loss: float, disc_loss: float):
+        print('[EPOCH {}]: gen_loss: {:.4f}, disc_loss : {:.4f}'.format(epoch, model_loss, disc_loss))
         loss_checkpoint_dest = os.path.join(self.checkpoint_repo, 'loss' ,f'loss_{str(epoch).zfill(4)}.pth')
         save_loss(loss_checkpoint_dest, epoch, model_loss, disc_loss)
   
