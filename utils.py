@@ -59,16 +59,15 @@ def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_
             optimizer.step()
 
             # Save checkpoint
-            if time.time() - lastest_checkpoint_time > SAVE_INTERVAL:
+            if (time.time() - lastest_checkpoint_time > SAVE_INTERVAL) and (time.time() - START_TIME > ONE_DAY):
                 lastest_checkpoint_time = time.time()
                 model_checkpoint_dest = os.path.join(CHECKPOINTS_DIR, f'model_{epoch}.pth')
                 disc_checkpoint_dest = os.path.join(CHECKPOINTS_DIR, f'disc_{epoch}.pth')
-
                 save_checkpoint(model_checkpoint_dest, epoch, model, optimizer)
                 save_checkpoint(disc_checkpoint_dest, epoch, disc, disc_optimizer)
 
         # Save loss
-        loss_checkpoint_dest = os.path.join(CHECKPOINTS_DIR, f'loss_{epoch}.pth')
+        loss_checkpoint_dest = os.path.join(CHECKPOINTS_DIR, 'loss' , f'loss_{str(epoch).zfill(4)}.pth')
         save_loss(file_name= loss_checkpoint_dest,
                   epoch= epoch,
                   model_loss= model_total_loss / len(train_loader),
