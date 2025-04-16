@@ -35,11 +35,11 @@ def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_
         for batch_idx, (inputs, targets) in enumerate(train_loader):
             imgs, masks = inputs[0].to(device), inputs[1].to(device)
             targets = targets.to(device)
-            outputs = model(imgs, masks)
+            fake = model(imgs, masks)
 
             # Train Discriminator
             disc_optimizer.zero_grad()
-            disc_fake_pred = disc(outputs.detach()) # reuse output
+            disc_fake_pred = disc(fake.detach()) # reuse output
             disc_real_pred = disc(targets)
             
             disc_fake_loss = disc_criterion(disc_fake_pred, torch.zeros_like(disc_fake_pred))
@@ -51,9 +51,9 @@ def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_
 
             # Train Model
             optimizer.zero_grad()
-            disc_fake_pred = disc(outputs) # reuse output
+            disc_fake_pred = disc(fake) # reuse output
             disc_loss = disc_criterion(disc_fake_pred, torch.ones_like(disc_fake_pred))
-            loss = criterion(masks, outputs, targets, disc_loss)
+            loss = criterion(masks, fake, targets, disc_loss)
             model_total_loss += loss.item()
             loss.backward()
             optimizer.step()
@@ -66,6 +66,8 @@ def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_
             save_checkpoint(model_checkpoint_dest, epoch, model, optimizer)
             save_checkpoint(disc_checkpoint_dest, epoch, disc, disc_optimizer)
 
+
+        print(f"[EPOCH {epoch}]: gen_loss: {model_total_loss / len(train_loader):.4f}, disc_loss : {disc_total_loss / len(train_loader):.4f}")
         # Save loss
         loss_checkpoint_dest = os.path.join(CHECKPOINTS_DIR, 'loss' , f'loss_{str(epoch).zfill(4)}.pth')
         save_loss(file_name= loss_checkpoint_dest,
