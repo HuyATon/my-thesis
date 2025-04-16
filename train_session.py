@@ -114,7 +114,7 @@ class TrainSession:
         save_checkpoint(disc_checkpoint_dest, epoch, self.disc, self.disc_optimizer)
     
     def log_loss(self, epoch: int, model_loss: float, disc_loss: float):
-        print('[EPOCH {}]: gen_loss: {:.4f}, disc_loss : {:.4f}'.format(str(epoch).zfill(4), model_loss, disc_loss))
-        loss_checkpoint_dest = os.path.join(self.checkpoint_repo, 'loss' ,f'loss_{str(epoch).zfill(4)}.pth')
+        print('[EPOCH {}]: gen_loss: {:.4f}, disc_loss : {:.4f}'.format(str(epoch).zfill(5), model_loss, disc_loss))
+        loss_checkpoint_dest = os.path.join(self.checkpoint_repo, 'loss' ,f'loss_{str(epoch).zfill(5)}.pth')
         save_loss(loss_checkpoint_dest, epoch, model_loss, disc_loss)
   
