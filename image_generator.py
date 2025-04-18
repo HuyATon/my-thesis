@@ -58,10 +58,9 @@ class ImageGenerator:
             for index, (inputs, _) in enumerate(test_loader):
                 imgs, masks = inputs[0].to(self.device), inputs[1].to(self.device)
                 masks = transforms.Resize(size=(256, 256), interpolation= transforms.InterpolationMode.NEAREST)(masks)
-                with torch.no_grad():
-                    outputs = self.model(imgs, masks)
-                    for i in range(outputs.shape[0]):
-                        org_filename = test_dataset.imgs[index * self.batch_size + i]
-                        save_path = os.path.join(out_dir_path, org_filename)
-                        self.save_image(outputs[i], save_path)
+                outputs = self.model(imgs, masks)
+                for i in range(outputs.shape[0]):
+                    org_filename = test_dataset.imgs[index * self.batch_size + i]
+                    save_path = os.path.join(out_dir_path, org_filename)
+                    self.save_image(outputs[i], save_path)
 
