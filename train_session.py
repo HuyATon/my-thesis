@@ -2,7 +2,8 @@ import torch
 import os
 import time
 import torch.nn as nn
-
+import torchvision.transforms as transforms
+from torchvision.utils import make_grid
 from losses.combined import CombinedLoss
 from network.network_pro import Inpaint
 from network.discriminator import Discriminator
@@ -46,7 +47,7 @@ class TrainSession:
 
 
     def prepare_repo(self):
-        for repo in ["loss", "model", "disc"]:
+        for repo in ["loss", "model", "disc", 'log_img']:
             repo_path = os.path.join(self.checkpoint_repo, repo)
             if not os.path.exists(repo_path):
                 os.makedirs(repo_path)
@@ -71,16 +72,16 @@ class TrainSession:
                 return # stop training
             model_total_loss = 0
             disc_total_loss = 0
-            for inputs, targets in self.train_loader:
+            for inputs, gt in self.train_loader:
                 imgs, masks = inputs[0].to(self.device), inputs[1].to(self.device)
-                targets = targets.to(self.device)
+                gt = gt.to(self.device)
 
                 fakes = self.model(imgs, masks)
 
                 # Train Discriminator
                 self.disc_optimizer.zero_grad()
                 fake_pred = self.disc(fakes.detach())
-                real_pred = self.disc(targets)
+                real_pred = self.disc(gt)
                 fake_loss = self.disc_criterion(fake_pred, torch.zeros_like(fake_pred))
                 real_loss = self.disc_criterion(real_pred, torch.ones_like(real_pred))
                 disc_loss = (fake_loss + real_loss) / 2
@@ -92,11 +93,13 @@ class TrainSession:
                 self.optimizer.zero_grad()
                 fake_pred = self.disc(fakes)
                 disc_loss = self.disc_criterion(fake_pred, torch.ones_like(fake_pred))
-                loss = self.criterion(masks, fakes, targets, disc_loss)
+                loss = self.criterion(masks, fakes, gt, disc_loss)
                 model_total_loss += loss.item()
                 loss.backward()
                 self.optimizer.step()
 
+            if epoch % 10 == 0:
+                self.log_outputs(epoch, fakes = fakes, gt = gt, masks = masks)
             self.perform_logging(epoch, 
                                  model_total_loss / len(self.train_loader), 
                                  disc_total_loss / len(self.train_loader))
@@ -117,4 +120,13 @@ class TrainSession:
         print('[EPOCH {}]: gen_loss: {:.4f}, disc_loss : {:.4f}'.format(str(epoch).zfill(5), model_loss, disc_loss))
         loss_checkpoint_dest = os.path.join(self.checkpoint_repo, 'loss' ,f'loss_{str(epoch).zfill(5)}.pth')
         save_loss(loss_checkpoint_dest, epoch, model_loss, disc_loss)
+
+    def log_outputs(self, epoch: int, fakes: torch.Tensor, gt: torch.Tensor, masks: torch.Tensor):
+        fakes = (fakes + 1) / 2
+        masked = (gt + 1) / 2 * (1 - masks)
+        log_img = make_grid(torch.cat([masked, fakes], dim=0), nrow= min(fakes.shape[0], self.train_loader.batch_size))
+        log_img = transforms.ToPILImage()(log_img.detach().cpu())
+        img_path = os.path.join(self.checkpoint_repo, 'log_img', f'log_{str(epoch).zfill(5)}.png')
+        log_img.save(img_path)
+
   
