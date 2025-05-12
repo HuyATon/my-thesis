@@ -76,7 +76,7 @@ class PerceptualLoss(nn.Module):
         self.add_module('vgg', VGG19())
         self.criterion = torch.nn.L1Loss()
         self.weights = weights
-        self.transform = models.VGG19_Weights.IMAGENET1K_V1.transforms()
+        self.standard_transform = models.VGG19_Weights.IMAGENET1K_V1.transforms()
 
     def normalize(self, x, from_tanh=True):
         if from_tanh:
@@ -85,9 +85,7 @@ class PerceptualLoss(nn.Module):
 
     def __call__(self, x, y):
         # Compute features
-        x = self.transform(self.normalize(x))
-        y = self.transform(self.normalize(y))
-        x_vgg, y_vgg = self.vgg(x), self.vgg(y)
+        x_vgg, y_vgg = self.vgg(self.normalize(x)), self.normalize(y)
 
         content_loss = 0.0
         content_loss += self.weights[0] * self.criterion(x_vgg['relu1_1'], y_vgg['relu1_1'])
