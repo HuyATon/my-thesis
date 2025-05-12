@@ -83,7 +83,7 @@ class PerceptualLoss(nn.Module):
             x = (x + 1) / 2 # [-1, 1] => [0, 1]
         return self.standard_transform(x)
 
-    def __call__(self, x, y):
+    def forward(self, x, y):
         # Compute features
         x_vgg, y_vgg = self.vgg(self.normalize(x)), self.normalize(y)
 
