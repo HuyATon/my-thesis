@@ -85,7 +85,7 @@ class PerceptualLoss(nn.Module):
 
     def forward(self, x, y):
         # Compute features
-        x_vgg, y_vgg = self.vgg(self.normalize(x)), self.normalize(y)
+        x_vgg, y_vgg = self.vgg(self.normalize(x)), self.vgg(self.normalize(y))
 
         content_loss = 0.0
         content_loss += self.weights[0] * self.criterion(x_vgg['relu1_1'], y_vgg['relu1_1'])
