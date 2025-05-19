@@ -21,7 +21,7 @@ class TrainSession:
                  device: str,
                  train_loader: DataLoader,
                  checkpoint_repo: str,
-                 lr= 1e-3, 
+                 lr= 1e-4, 
                  duration= 48 * 60 * 60, # 2 days
                  save_window= 60 * 60 # 1 hour
                  ):
@@ -44,6 +44,11 @@ class TrainSession:
         self.disc = Discriminator().to(self.device)
         self.disc_optimizer = torch.optim.Adam(self.disc.parameters(), lr=self.lr)
         self.disc_criterion = nn.BCEWithLogitsLoss().to(device)
+
+        self.mask_transform = transforms.Compose([
+            transforms.RandomVerticalFlip(),
+            transforms.RandomHorizontalFlip(),
+        ])
 
 
     def prepare_repo(self):
@@ -75,6 +80,7 @@ class TrainSession:
             for inputs, gt in self.train_loader:
                 imgs, masks = inputs[0].to(self.device), inputs[1].to(self.device)
                 gt = gt.to(self.device)
+                masks = self.mask_transform(masks)
 
                 fakes = self.model(imgs, masks)
 
