@@ -11,6 +11,7 @@ MODEL_CHECKPOINT = '/media02/nnthao05/code/cmt_git/checkpoints/v2/model_50.pth' 
 DISC_CHECKPOINT = '/media02/nnthao05/code/cmt_git/checkpoints/v2/disc_50.pth' # Change this to current checkpoint (None if not exist)
 
 # Time configs
-DURATION = 47 * 60 * 60  # ~ 2 days
+DURATION = 48 * 60 * 60  # ~ 2 days
 SAVE_INTERVAL = 60 * 60
 START_TIME = time.time()
+ONE_DAY = 24 * 60 * 60

@@ -35,15 +35,15 @@ def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_
         for batch_idx, (inputs, targets) in enumerate(train_loader):
             imgs, masks = inputs[0].to(device), inputs[1].to(device)
             targets = targets.to(device)
-            outputs = model(imgs, masks)
+            fake = model(imgs, masks)
 
             # Train Discriminator
             disc_optimizer.zero_grad()
-            disc_fake_pred = disc(outputs.to(device))
-            disc_real_pred = disc(targets.to(device))
+            disc_fake_pred = disc(fake.detach()) # reuse output
+            disc_real_pred = disc(targets)
             
-            disc_fake_loss = disc_criterion(disc_fake_pred, torch.zeros_like(disc_fake_pred).to(device))
-            disc_real_loss = disc_criterion(disc_real_pred, torch.ones_like(disc_real_pred).to(device))
+            disc_fake_loss = disc_criterion(disc_fake_pred, torch.zeros_like(disc_fake_pred))
+            disc_real_loss = disc_criterion(disc_real_pred, torch.ones_like(disc_real_pred))
             disc_loss = (disc_fake_loss + disc_real_loss) / 2
             disc_total_loss += disc_loss.item()
             disc_loss.backward()
@@ -51,30 +51,32 @@ def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_
 
             # Train Model
             optimizer.zero_grad()
-            outputs = model(imgs, masks)
-            disc_fake_pred = disc(outputs.to(device))
-            disc_loss = disc_criterion(disc_fake_pred, torch.ones_like(disc_fake_pred).to(device))
-            loss = criterion(masks.to(device), outputs.to(device), targets.to(device), disc_loss)
+            disc_fake_pred = disc(fake) # reuse output
+            disc_loss = disc_criterion(disc_fake_pred, torch.ones_like(disc_fake_pred))
+            loss = criterion(masks, fake, targets, disc_loss)
             model_total_loss += loss.item()
             loss.backward()
             optimizer.step()
 
-            # Save checkpoint
-            if time.time() - lastest_checkpoint_time > SAVE_INTERVAL:
-                lastest_checkpoint_time = time.time()
-                model_checkpoint_dest = os.path.join(CHECKPOINTS_DIR, f'model_{epoch}.pth')
-                disc_checkpoint_dest = os.path.join(CHECKPOINTS_DIR, f'disc_{epoch}.pth')
+        # Save checkpoint
+        if (time.time() - lastest_checkpoint_time > SAVE_INTERVAL) and (time.time() - START_TIME > ONE_DAY):
+            lastest_checkpoint_time = time.time()
+            model_checkpoint_dest = os.path.join(CHECKPOINTS_DIR, f'model_{epoch}.pth')
+            disc_checkpoint_dest = os.path.join(CHECKPOINTS_DIR, f'disc_{epoch}.pth')
+            save_checkpoint(model_checkpoint_dest, epoch, model, optimizer)
+            save_checkpoint(disc_checkpoint_dest, epoch, disc, disc_optimizer)
 
-                save_checkpoint(model_checkpoint_dest, epoch, model, optimizer)
-                save_checkpoint(disc_checkpoint_dest, epoch, disc, disc_optimizer)
 
+        print(f"[EPOCH {epoch}]: gen_loss: {model_total_loss / len(train_loader):.4f}, disc_loss : {disc_total_loss / len(train_loader):.4f}")
         # Save loss
-        loss_checkpoint_dest = os.path.join(CHECKPOINTS_DIR, f'loss_{epoch}.pth')
+        loss_checkpoint_dest = os.path.join(CHECKPOINTS_DIR, 'loss' , f'loss_{str(epoch).zfill(4)}.pth')
         save_loss(file_name= loss_checkpoint_dest,
                   epoch= epoch,
                   model_loss= model_total_loss / len(train_loader),
                   disc_loss= disc_total_loss / len(train_loader))
 
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 # ======================== Authors code starts here ========================
 def _load(checkpoint_path):

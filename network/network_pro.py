@@ -18,3 +18,6 @@ class Inpaint(nn.Module):
         gen = self.refine(torch.cat(c_gen_+[mask], 1))
         gen = (gen * mask) + img * (1 - mask)
         return gen
+    
+    def count_parameters(self):
+        return sum(p.numel() for p in self.parameters() if p.requires_grad)

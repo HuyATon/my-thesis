@@ -189,19 +189,38 @@ class Transformer(nn.Module):
         H, W = pair(resolution)
         self.num = (H//kH)*(W//kW)
 
-        for _ in range(depth):
-            self.layers.append(nn.ModuleList([
-                PreNorm(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout, window=window, resolution=resolution, is_overlap=is_overlap)),
-                PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout))
-            ]))
+        for i in range(depth):
+            if i < depth - 1:
+                self.layers.append(nn.ModuleList([
+                    PreNorm(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout, window=window, resolution=resolution, is_overlap=is_overlap)),
+                    PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout)),
+                    PreNorm(dim, MambaVisionMixer(dim)),
+                    PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout))
+                ]))
+            # Final layer only using transformer
+            else:
+                self.layers.append(nn.ModuleList([
+                    PreNorm(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout, window=window, resolution=resolution, is_overlap=is_overlap)),
+                    PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout))
+                ]))
 
     def forward(self, x, m):
         stack = []
-        for i, (attn, ff) in enumerate(self.layers):
-            y, m, inter = attn(x, m)
-            x = y + x
-            x = ff(x) + x
-            stack.append(inter)
+        for i, msau_block in enumerate(self.layers):
+            if len(msau_block) == 4:
+                attn, ff_1, mamv, ff_2 = msau_block
+                y, m, inter = attn(x, m)
+                x = y + x
+                x = ff_1(x) + x
+                x = mamv(x) + x
+                x = ff_2(x) + x
+                stack.append(inter)
+            else:
+                attn, ff = msau_block
+                y, m, inter = attn(x, m)
+                x = y + x
+                x = ff(x) + x
+                stack.append(inter)
         return x, stack
 
 class ViT(nn.Module):
@@ -226,13 +245,6 @@ class ViT(nn.Module):
         self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout, patch_size, image_size)
-        # Mamba Vision Mixers (2)
-        self.pre_mixers_layers = nn.ModuleList([
-            MambaVisionMixer(d_model = dim) for _ in range(n_mixer_blocks)
-        ])
-        self.post_mixers_layers = nn.ModuleList([
-            MambaVisionMixer(d_model = dim) for _ in range(n_mixer_blocks)
-        ])
 
         self.mlp_head = nn.Sequential(
             nn.LayerNorm(dim),
@@ -261,20 +273,7 @@ class ViT(nn.Module):
         x = torch.cat((cls_tokens, x), dim=1)
         x += self.pos_embedding
 
-        #inter_m = m / (1e-6 + torch.max(m, dim=2, keepdim=True)[0])
-        #inter = F.interpolate(torch.mean(inter_m[:, 1:], dim=-1, keepdim=True)[:, :16*16].reshape(-1, 1, 16, 16), (256, 256))
-        #inter_shift = F.interpolate(torch.mean(inter_m[:, 1:], dim=-1, keepdim=True)[:, -15*15:].reshape(-1, 1, 15, 15), (15*16, 15*16))
-        #inter[..., 8:-8, 8:-8] = (inter[..., 8:-8, 8:-8] + inter_shift) / 2
-
-        # Pre mamba mixers
-        for layer in self.pre_mixers_layers:
-            x = layer(x)
-
         x, stack = self.transformer(x, m)
-
-        # Post mamba mixers
-        for layer in self.post_mixers_layers:
-            x = layer(x)
 
         x = x[:, 1:]
         x = self.mlp_head(x) # B, S, 3
