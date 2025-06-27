@@ -88,9 +88,13 @@ class TrainSession:
                 self.disc_optimizer.zero_grad()
                 fake_pred = self.disc(fakes.detach())
                 real_pred = self.disc(gt)
-                fake_loss = self.disc_criterion(fake_pred, torch.zeros_like(fake_pred))
-                real_loss = self.disc_criterion(real_pred, torch.ones_like(real_pred))
-                disc_loss = (fake_loss + real_loss) / 2
+                # fake_loss = self.disc_criterion(fake_pred, torch.zeros_like(fake_pred))
+                # real_loss = self.disc_criterion(real_pred, torch.ones_like(real_pred))
+                # disc_loss = (fake_loss + real_loss) / 2
+                real_loss = torch.mean(torch.nn.ReLU()(1.0 - real_pred))
+                fake_loss = torch.mean(torch.nn.ReLU()(1.0 + fake_pred))
+                disc_loss = fake_loss + real_loss
+
                 disc_total_loss += disc_loss.item()
                 disc_loss.backward()
                 self.disc_optimizer.step()
@@ -98,7 +102,7 @@ class TrainSession:
                 # Train Model
                 self.optimizer.zero_grad()
                 fake_pred = self.disc(fakes)
-                disc_loss = self.disc_criterion(fake_pred, torch.ones_like(fake_pred))
+                disc_loss = -torch.mean(torch.nn.ReLU()(fake_pred))
                 loss = self.criterion(masks, fakes, gt, disc_loss)
                 model_total_loss += loss.item()
                 loss.backward()
