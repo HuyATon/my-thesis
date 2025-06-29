@@ -290,9 +290,11 @@ class SwinTransformerBlock_revised(nn.Module):
         assert L == H * W, "input feature has wrong size"
 
         shortcut = x
-        x = x.view(B, H, W, C)
-        x_hat = self.masker(x) # B, L, C
 
+        x_hat = x.view(B, H, W, C).permute(0, 3, 1, 2)
+        x_hat = self.masker(x_hat)
+
+        x = x.view(B, H, W, C)
 
         # cyclic shift
         if self.is_shife:
