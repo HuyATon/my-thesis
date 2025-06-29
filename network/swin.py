@@ -320,8 +320,6 @@ class SwinTransformerBlock_revised(nn.Module):
             x = torch.roll(shifted_x, shifts=(self.sH, self.sW), dims=(1, 2))
         else:
             x = shifted_x
-        print('x shape', x.shape)
-        print('x_bar shape', x_bar.shape)
         x = x * x_bar
         x = x.view(B, H * W, C)
         x = shortcut + self.drop_path(self.norm1(x))
