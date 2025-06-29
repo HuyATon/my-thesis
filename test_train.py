@@ -36,3 +36,4 @@ train_session = TrainSession(
         train_loader=train_loader,
         checkpoint_repo='.'
     )
+train_session.start_training()
