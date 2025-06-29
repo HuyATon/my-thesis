@@ -72,7 +72,7 @@ class Refine(nn.Module):
 class GatedEmbedding(nn.Module):
     def  __init__(self, in_c: int, out_c: int, bias: bool = False):
         super(GatedEmbedding, self).__init__()
-        self.conv = nn.Conv2d(in_c, out_c * 2, kernel_size=7, stride=1, padding=1, bias=bias)
+        self.conv = nn.Conv2d(in_c, out_c * 2, kernel_size=7, stride=1, padding=3, bias=bias)
     def forward(self, x):
         x = self.conv(x)
         x1, x2 = x.chunk(2, dim=1)
