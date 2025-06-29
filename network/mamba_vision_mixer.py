@@ -12,7 +12,7 @@ class MambaVisionMixer(nn.Module):
     def __init__(
         self,
         d_model,
-        d_state=8,
+        d_state=16,
         d_conv=4,
         expand=2,
         dt_rank="auto",

@@ -291,8 +291,7 @@ class SwinTransformerBlock_revised(nn.Module):
 
         shortcut = x
         x = x.view(B, H, W, C)
-        x_hat = x.permute(0, 3, 1, 2) # B C H W
-        x_hat = self.masker(x_hat) # B, L, C
+        x_hat = self.masker(x) # B, L, C
 
 
         # cyclic shift
