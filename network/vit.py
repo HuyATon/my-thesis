@@ -206,13 +206,12 @@ class Transformer(nn.Module):
     def forward(self, x, m):
         stack = []
         for i, msau_block in enumerate(self.layers):
-            if len(msau_block) == 4:
-                attn, ff_1, mamv, ff_2 = msau_block
+            if len(msau_block) == 3:
+                attn, mamv, ff = msau_block
                 y, m, inter = attn(x, m)
                 x = y + x
-                x = ff_1(x) + x
                 x = mamv(x) + x
-                x = ff_2(x) + x
+                x = ff(x) + x
                 stack.append(inter)
             else:
                 attn, ff = msau_block
