@@ -1,6 +1,8 @@
 from network.swin import *
 import torch.nn as nn
 import torch
+import torch.nn.functional as F
+
 
 class Refine(nn.Module):
     def __init__(self, in_c):
@@ -8,7 +10,7 @@ class Refine(nn.Module):
         dim = 32
 
         self.encoder_blocks = nn.ModuleList([
-            nn.Sequential(nn.Conv2d(in_c+1, dim // 2, kernel_size=7, stride=1, padding=3),  nn.GELU()), # 256, 256
+            GatedEmbedding(in_c + 1, dim  // 2),
             PatchEmbed(img_size=(256, 256), patch_size=4, in_chans=dim // 2, embed_dim=dim, norm_layer=nn.LayerNorm), # 64, 64, c
             BasicLayer(dim=dim, input_resolution=(64, 64), num_heads=1, depth=2, stride=2, window_size=4), # 32, 32, c * 2
 
@@ -65,3 +67,14 @@ class Refine(nn.Module):
 
 
         return outputs
+
+
+class GatedEmbedding(nn.Module):
+    def  __init__(self, in_c: int, out_c: int, bias: bool = False):
+        super(GatedEmbedding, self).__init__()
+        self.conv = nn.Conv2d(in_c, out_c * 2, kernel_size=7, stride=1, padding=1, bias=bias)
+    def forward(self, x):
+        x = self.conv(x)
+        x1, x2 = x.chunk(2, dim=1)
+        x = F.gelu(x1) * x2
+        return x

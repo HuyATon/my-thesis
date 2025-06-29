@@ -1,11 +1,9 @@
 import torch
 import torch.nn as nn 
-import os
-import cv2
 from torch.utils.data import Dataset, DataLoader
-import time
 from utils import *
 from configs import *
+from train_session import TrainSession
 
 from network.network_pro import Inpaint
 from losses.combined import CombinedLoss
@@ -33,4 +31,8 @@ print("#model_params:", model.count_parameters())
 model.train()
 disc.train()
 
-train(epochs=5, model=model, train_loader=train_loader, criterion=criterion, optimizer=optimizer, device=device, disc=disc, disc_criterion=disc_criterion, disc_optimizer=disc_optimizer)
+train_session = TrainSession(
+        device=device,
+        train_loader=train_loader,
+        checkpoint_repo='.'
+    )

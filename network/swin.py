@@ -5,6 +5,27 @@ from timm.models.layers import DropPath, to_2tuple
 import numpy as np
 
 
+class AttentionMasker(nn.Module): 
+    def __init__(self, in_c, dim):
+        super().__init__()
+        self.extractor = nn.Sequential([
+            nn.AvgPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(in_c, dim, kernel_size=3, stride=1, padding=1, bias=True),
+            nn.LayerNorm(dim),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(dim, dim, kernel_size=3, stride=1, padding=1, bias=True),
+            nn.LayerNorm(dim),
+            nn.ReLU(inplace=True),
+            nn.Upsample(scale_factor=2)
+        ])
+    
+    def forward(self, x):
+        """
+        x: B, C, H, W
+        """
+        x = self.extractor(x)
+        return x
+
 class Mlp(nn.Module):
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
         super().__init__()
@@ -212,6 +233,7 @@ class SwinTransformerBlock_revised(nn.Module):
         self.is_shife = is_shift
         self.kH, self.kW = to_2tuple(window_size)
         self.sH, self.sW = self.kH//2, self.kW//2
+        self.masker = AttentionMasker(in_c=dim, dim=dim)
 
         self.mlp_ratio = mlp_ratio
 
@@ -269,6 +291,9 @@ class SwinTransformerBlock_revised(nn.Module):
 
         shortcut = x
         x = x.view(B, H, W, C)
+        x_hat = x.permute(0, 3, 1, 2) # B C H W
+        x_hat = self.masker(x_hat) # B, L, C
+
 
         # cyclic shift
         if self.is_shife:
@@ -293,7 +318,7 @@ class SwinTransformerBlock_revised(nn.Module):
             x = torch.roll(shifted_x, shifts=(self.sH, self.sW), dims=(1, 2))
         else:
             x = shifted_x
-        x = x.view(B, H * W, C)
+        x = x.view(B, H * W, C) * x_hat
         x = shortcut + self.drop_path(self.norm1(x))
 
         # FFN
