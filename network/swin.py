@@ -322,7 +322,8 @@ class SwinTransformerBlock_revised(nn.Module):
             x = shifted_x
         print('x shape', x.shape)
         print('x_bar shape', x_bar.shape)
-        x = x.view(B, H * W, C) * x_bar
+        x = x * x_bar
+        x = x.view(B, H * W, C)
         x = shortcut + self.drop_path(self.norm1(x))
 
         # FFN
