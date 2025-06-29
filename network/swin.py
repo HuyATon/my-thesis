@@ -291,8 +291,9 @@ class SwinTransformerBlock_revised(nn.Module):
 
         shortcut = x
 
-        x_hat = x.view(B, H, W, C).permute(0, 3, 1, 2)
-        x_hat = self.masker(x_hat)
+        x_bar = x.view(B, H, W, C).permute(0, 3, 1, 2)
+        x_bar = self.masker(x_bar)
+        x_bar = x_bar.view(B, H, W, C)
 
         x = x.view(B, H, W, C)
 
@@ -320,8 +321,8 @@ class SwinTransformerBlock_revised(nn.Module):
         else:
             x = shifted_x
         print('x shape', x.shape)
-        print('x_hat shape', x_hat.shape)
-        x = x.view(B, H * W, C) * x_hat
+        print('x_bar shape', x_bar.shape)
+        x = x.view(B, H * W, C) * x_bar
         x = shortcut + self.drop_path(self.norm1(x))
 
         # FFN
