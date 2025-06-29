@@ -11,10 +11,10 @@ class AttentionMasker(nn.Module):
         self.extractor = nn.Sequential(
             nn.AvgPool2d(kernel_size=2, stride=2),
             nn.Conv2d(in_c, dim, kernel_size=3, stride=1, padding=1, bias=True),
-            nn.LayerNorm(dim),
+            nn.BatchNorm2d(dim),
             nn.ReLU(inplace=True),
             nn.Conv2d(dim, dim, kernel_size=3, stride=1, padding=1, bias=True),
-            nn.LayerNorm(dim),
+            nn.BatchNorm2d(dim),
             nn.ReLU(inplace=True),
             nn.Upsample(scale_factor=2)
         )
