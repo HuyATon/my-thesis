@@ -193,7 +193,6 @@ class Transformer(nn.Module):
             if i < depth - 1:
                 self.layers.append(nn.ModuleList([
                     PreNorm(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout, window=window, resolution=resolution, is_overlap=is_overlap)),
-                    PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout)),
                     PreNorm(dim, MambaVisionMixer(dim)),
                     PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout))
                 ]))
