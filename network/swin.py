@@ -8,7 +8,7 @@ import numpy as np
 class AttentionMasker(nn.Module): 
     def __init__(self, in_c, dim):
         super().__init__()
-        self.extractor = nn.Sequential([
+        self.extractor = nn.Sequential(
             nn.AvgPool2d(kernel_size=2, stride=2),
             nn.Conv2d(in_c, dim, kernel_size=3, stride=1, padding=1, bias=True),
             nn.LayerNorm(dim),
@@ -17,7 +17,7 @@ class AttentionMasker(nn.Module):
             nn.LayerNorm(dim),
             nn.ReLU(inplace=True),
             nn.Upsample(scale_factor=2)
-        ])
+        )
     
     def forward(self, x):
         """
