@@ -6,7 +6,7 @@ from losses.reconstruction import ReconstructionLoss
 
 class CombinedLoss(nn.Module):
 
-    def __init__(self, w_mr = 1, w_p = 10, w_disc = 0.001):
+    def __init__(self, w_mr = 1, w_p = 10, w_disc = 0.005):
         super(CombinedLoss, self).__init__()
 
         self.w_mr = w_mr
