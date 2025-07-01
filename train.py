@@ -65,7 +65,6 @@ def prepare_dataloader(dataset: InpaintingDataset, batch_size: int):
     return DataLoader(
         dataset=dataset,
         batch_size=batch_size,
-        shuffle=False,
         sampler=DistributedSampler(dataset=dataset, shuffle=False),
     )
 
@@ -99,4 +98,4 @@ def main(rank: int, world_size: int):
 
 if __name__ == "__main__":
     world_size = torch.cuda.device_count()
-    mp.spawn(main, args=(world_size), nprocs=world_size)
+    mp.spawn(main, args=(world_size,), nprocs=world_size)

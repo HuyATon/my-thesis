@@ -68,10 +68,10 @@ class TrainSession:
                 os.makedirs(repo_path)
 
     def load_checkpoints(self, model_path: str, disc_path: str):
-        saved_checkpoint = torch.load(model_path, map_location=self.device)
+        saved_checkpoint = torch.load(model_path, map_location=self.rank)
         self.model.load_state_dict(saved_checkpoint[WEIGHT_KEY])
         self.optimizer.load_state_dict(saved_checkpoint[OPT_KEY])
-        saved_checkpoint = torch.load(disc_path, map_location=self.device)
+        saved_checkpoint = torch.load(disc_path, map_location=self.rank)
         self.disc.load_state_dict(saved_checkpoint[WEIGHT_KEY])
         self.disc_optimizer.load_state_dict(saved_checkpoint[OPT_KEY])
 
@@ -87,8 +87,8 @@ class TrainSession:
             model_total_loss = 0
             disc_total_loss = 0
             for inputs, gt in self.train_loader:
-                imgs, masks = inputs[0].to(self.device), inputs[1].to(self.device)
-                gt = gt.to(self.device)
+                imgs, masks = inputs[0].to(self.rank), inputs[1].to(self.rank)
+                gt = gt.to(self.rank)
                 masks = self.mask_transform(masks)
 
                 fakes = self.model(imgs, masks)
