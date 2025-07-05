@@ -64,3 +64,16 @@ class ImageGenerator:
                     save_path = os.path.join(out_dir_path, org_filename)
                     self.save_image(outputs[i], save_path)
 
+
+    def gen_single(self):
+        self.model.eval()
+        test_dataset = InpaintingDataset(img_dir=self.img_dir, mask_dir=self.mask_dir)
+        test_loader = DataLoader(test_dataset, batch_size=self.batch_size)
+        for index, (inputs, _) in enumerate(test_loader):
+            imgs, masks = inputs[0].to(self.device), inputs[1].to(self.device)
+            masks = transforms.Resize(size=(256, 256), interpolation= transforms.InterpolationMode.NEAREST)(masks)
+            outputs = self.model(imgs, masks)
+            for i in range(outputs.shape[0]):
+                save_path = os.path.join(self.output_dir, "00000.png")
+                self.save_image(outputs[i], save_path)
+
