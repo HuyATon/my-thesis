@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 import numpy as np
 import os
+from utils import load_checkpoint
 
 class ImageGenerator:
     def __init__(self, img_dir, mask_dir, output_dir, batch_size=8, model_checkpoint_path = None):
@@ -25,11 +26,9 @@ class ImageGenerator:
 
     def load_model(self):
         if self.model_checkpoint_path != None:
-            checkpoint = torch.load(self.model_checkpoint_path, map_location=self.device)
-            if "model_state_dict" not in checkpoint:
-                raise KeyError("Invalid checkpoint: Missing 'model_state_dict'")
-            self.model.load_state_dict(checkpoint["model_state_dict"])
+            self.model = load_checkpoint(self.model_checkpoint_path, self.model)
             print("Model loaded successfully.")
+
 
     def create_output_dirs(self):
         for r in self.assess_ranges:
